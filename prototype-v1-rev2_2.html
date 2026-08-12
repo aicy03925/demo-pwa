@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現場作業數位平台 · V1 原型 rev2</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+:root{
+  --bg:#0F1512; --panel:#18211D; --panel2:#1E2823; --line:#2A3630;
+  --tx:#E7EDE9; --mut:#8FA097; --dim:#5E6E66;
+  --acc:#F0793A; --ok:#4C8F6E; --warn:#C9963F; --bad:#C4523B; --line-g:#06C755;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--tx);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",-apple-system,sans-serif;font-size:14px;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input,select,textarea{font-family:inherit;font-size:14px;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--panel);}
+::-webkit-scrollbar-thumb{background:#3A4A42;border-radius:3px;}
+
+.wrap{max-width:1300px;margin:0 auto;padding:16px 20px 60px;}
+.hdr{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:18px;}
+.logo{font-size:17px;font-weight:800;letter-spacing:1px;}
+.logo em{font-style:normal;color:var(--acc);}
+.who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mut);}
+.badge{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:4px 12px;font-size:11.5px;font-weight:700;}
+.badge.f{color:var(--acc);border-color:rgba(240,121,58,.4);}
+.badge.o{color:#7FB6DE;border-color:rgba(74,130,174,.4);}
+.badge.a{color:var(--warn);border-color:rgba(201,150,63,.4);}
+
+/* 登入 */
+.login{max-width:640px;margin:8vh auto;}
+.login h1{font-size:22px;font-weight:800;letter-spacing:1px;margin-bottom:6px;}
+.login p{font-size:12.5px;color:var(--mut);line-height:1.9;margin-bottom:24px;}
+.sec-t{font-size:11px;color:var(--acc);letter-spacing:3px;font-weight:700;margin:20px 0 10px;}
+.pick{display:flex;flex-direction:column;gap:8px;}
+.opt{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 15px;text-align:left;}
+.opt:hover{border-color:var(--dim);}
+.opt.on{border-color:var(--acc);background:rgba(240,121,58,.07);}
+.opt-n{font-size:14px;font-weight:700;}
+.opt-d{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.6;}
+.opt-c{margin-left:auto;font-size:10.5px;color:var(--dim);font-family:ui-monospace,monospace;}
+
+.lbl{font-size:11.5px;color:var(--mut);letter-spacing:.5px;margin-bottom:5px;display:block;}
+.req{color:var(--acc);margin-left:3px;}
+.fld{margin-bottom:14px;}
+.inp{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:6px;padding:9px 11px;}
+.inp:focus{outline:2px solid var(--acc);outline-offset:1px;}
+textarea.inp{min-height:70px;resize:vertical;}
+.inp.sm{padding:6px 9px;font-size:12.5px;}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{padding:7px 13px;border-radius:16px;border:1px solid var(--line);background:var(--panel2);font-size:12.5px;color:var(--mut);}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#1A0E06;font-weight:700;}
+.chip.j-ok.on{background:var(--ok);border-color:var(--ok);color:#08150E;}
+.chip.j-wait.on{background:var(--warn);border-color:var(--warn);color:#1A1204;}
+.chip.j-bad.on{background:var(--bad);border-color:var(--bad);color:#fff;}
+.chip.sm{padding:4px 10px;font-size:11.5px;}
+
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:18px;text-align:center;color:var(--dim);font-size:12.5px;width:100%;}
+.drop:hover{border-color:var(--acc);color:var(--mut);}
+.thumbs{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;}
+.thumb{position:relative;width:74px;height:74px;border-radius:6px;overflow:hidden;border:1px solid var(--line);}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.thumb .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);border-radius:50%;width:19px;height:19px;font-size:12px;line-height:19px;text-align:center;}
+
+.grp{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.015);}
+.grp-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.grp-n{font-size:12px;font-weight:700;color:var(--acc);letter-spacing:1px;}
+.mini{font-size:11.5px;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:4px 10px;}
+.mini:hover{color:var(--tx);border-color:var(--dim);}
+.mini.on{color:var(--acc);border-color:var(--acc);}
+
+.btn{width:100%;background:var(--acc);color:#1A0E06;font-weight:800;font-size:15px;padding:12px;border-radius:8px;letter-spacing:2px;}
+.btn:disabled{opacity:.45;}
+.btn:active{transform:scale(.985);}
+
+.phone{max-width:420px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.phone-bar{background:var(--panel2);padding:9px 14px;font-size:11px;color:var(--mut);display:flex;justify-content:space-between;border-bottom:1px solid var(--line);}
+.phone-body{padding:16px 14px 20px;}
+.sent{background:rgba(76,143,110,.12);border:1px solid rgba(76,143,110,.4);color:#8FD6AC;border-radius:8px;padding:11px 14px;font-size:12.5px;margin-bottom:14px;line-height:1.7;}
+
+.cols{display:flex;gap:18px;align-items:flex-start;}
+.main{flex:1;min-width:0;}
+.side{width:310px;flex:none;}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ok);letter-spacing:1px;}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:p 1.8s infinite;}
+@keyframes p{0%,100%{opacity:1;}50%{opacity:.25;}}
+.count{font-size:11.5px;color:var(--mut);}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card.new{animation:in .5s ease;border-color:var(--acc);}
+@keyframes in{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px;flex-wrap:wrap;}
+.card-t{font-size:14.5px;font-weight:700;}
+.card-m{font-size:11px;color:var(--dim);letter-spacing:.5px;}
+.tag{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:10px;letter-spacing:1px;}
+.tag.ok{background:rgba(76,143,110,.2);color:#7FC49E;}
+.tag.wait{background:rgba(201,150,63,.2);color:#DDB565;}
+.tag.bad{background:rgba(196,82,59,.22);color:#E58873;}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:12.5px;}
+.kv dt{color:var(--dim);}
+.card-thumbs{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+.card-thumbs img{width:70px;height:70px;object-fit:cover;border-radius:5px;border:1px solid var(--line);}
+
+.ai{margin-top:11px;border-top:1px solid var(--line);padding-top:11px;}
+.ai-h{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--warn);letter-spacing:2px;font-weight:700;margin-bottom:7px;}
+.ai-body{font-size:12.5px;color:#CFD9D3;line-height:1.75;white-space:pre-wrap;}
+.ai-load{font-size:12px;color:var(--dim);}
+.err{color:#E58873;font-size:11.5px;margin-top:8px;line-height:1.7;background:rgba(196,82,59,.09);border:1px solid rgba(196,82,59,.3);border-radius:5px;padding:8px 10px;word-break:break-all;}
+
+/* LINE 模擬 */
+.line-box{background:#1B2C22;border:1px solid #2E4A38;border-radius:10px;overflow:hidden;position:sticky;top:16px;}
+.line-h{background:var(--line-g);color:#062F16;font-size:12px;font-weight:800;padding:8px 13px;letter-spacing:1px;display:flex;align-items:center;gap:7px;}
+.line-b{padding:12px;max-height:64vh;overflow-y:auto;background:#12211A;}
+.msg{background:#FFFFFF;color:#1a1a1a;border-radius:4px 12px 12px 12px;padding:10px 12px;font-size:12.5px;line-height:1.7;margin-bottom:9px;animation:in .4s ease;}
+.msg .m-t{font-weight:800;color:#B03A28;margin-bottom:4px;font-size:12px;}
+.msg .m-time{font-size:10px;color:#8a8a8a;margin-top:6px;}
+.line-empty{color:#4E6B5A;font-size:12px;text-align:center;padding:30px 10px;line-height:1.9;}
+
+/* 設定包編輯器 */
+.ed-row{display:grid;grid-template-columns:26px 1fr 130px 70px 30px 30px 30px;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:9px 10px;margin-bottom:7px;}
+.ed-row.g{border-color:rgba(240,121,58,.35);}
+.ed-i{font-size:10.5px;color:var(--dim);font-family:ui-monospace,monospace;text-align:center;}
+.sub{margin:0 0 10px 26px;padding-left:12px;border-left:2px solid rgba(240,121,58,.3);}
+.json{background:#0B100D;border:1px solid var(--line);border-radius:8px;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:#A9C0B4;line-height:1.65;max-height:50vh;overflow:auto;white-space:pre;}
+.note{font-size:12px;color:var(--mut);line-height:1.9;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:6px;padding:12px 15px;margin-bottom:16px;}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:44px 20px;text-align:center;color:var(--dim);font-size:13px;line-height:2;}
+.tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line);}
+.tab{padding:8px 15px;font-size:12.5px;font-weight:600;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px;}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);}
+
+/* 派工行事曆 */
+.dp-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px;}
+.dp-f{min-width:130px;flex:1;}
+.dp-f.grow{flex:1.6;min-width:160px;}
+.dp-btn{background:var(--acc);color:#1A0E06;font-weight:800;font-size:12.5px;padding:9px 18px;border-radius:6px;white-space:nowrap;}
+.dp-btn:disabled{opacity:.4;}
+.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.cal-nav button{color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:5px 11px;font-size:13px;}
+.cal-nav button:hover{color:var(--tx);border-color:var(--dim);}
+.cal-mo{font-size:14px;font-weight:800;letter-spacing:1px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-wd{text-align:center;font-size:11px;color:var(--dim);padding:4px 0 8px;letter-spacing:1px;}
+.cal-cell{min-height:88px;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 6px 7px;}
+.cal-cell.out{opacity:.35;}
+.cal-cell.today{border-color:var(--acc);}
+.cal-d{font-size:11px;color:var(--dim);margin-bottom:5px;}
+.cal-chip{font-size:10.5px;line-height:1.5;border-radius:4px;padding:2.5px 6px;margin-bottom:3px;background:rgba(201,150,63,.18);color:#DDB565;border:1px solid rgba(201,150,63,.3);}
+.cal-chip.done{background:rgba(76,143,110,.18);color:#8FD6AC;border-color:rgba(76,143,110,.3);text-decoration:line-through;text-decoration-color:rgba(143,214,172,.5);}
+.dp-item{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 13px;margin-bottom:8px;}
+.dp-item.done{opacity:.55;}
+.dp-date{font-size:11px;color:var(--dim);font-family:ui-monospace,monospace;min-width:74px;}
+.dp-main{flex:1;font-size:13px;}
+.dp-note{color:var(--mut);font-size:11.5px;margin-top:2px;}
+@media(max-width:900px){.cols{flex-direction:column;}.side{width:100%;}
+  .cal-cell{min-height:60px;}.cal-chip{font-size:9.5px;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const h = React.createElement;
+const F = React.Fragment;
+const { useState, useRef, useEffect } = React;
+const now = () => new Date().toLocaleTimeString("zh-TW",{hour12:false});
+const uid = p => p+Math.random().toString(36).slice(2,7);
+
+/* ════════ 租戶（每家公司一個，資料互相隔離） ════════ */
+const TENANTS = [
+  { id:"T01", name:"京城建設", industry:"建商／不動產開發", code:"L 67-68",
+    staff:["王建成","李佩玲","張志豪"], mgr:"陳協理" },
+  { id:"T02", name:"光宇燈具", industry:"燈具批發商", code:"G 46",
+    staff:["林倉管","黃出貨","吳司機"], mgr:"周經理" },
+  { id:"T03", name:"日光照明顧問", industry:"工程顧問／設計", code:"M 71",
+    staff:["翁明騰","蔡璧澤","曾玉麟"], mgr:"李部長" }
+];
+
+/* ════════ 設定包（可由管理者用表單編輯） ════════ */
+const INIT_SCHEMAS = {
+  T01:{ title:"工地巡檢紀錄",
+    sites:["京城-衛武營","京城-龍中134","京城-青海370"],
+    aiRule:"你是營建現場品管助理。請依照片判斷：燈具安裝位置是否對齊、型號外觀是否與標示相符、施工工法是否有明顯瑕疵。",
+    fields:[
+      {id:"site",type:"select",label:"案場",required:true,from:"sites"},
+      {id:"floor",type:"select",label:"樓層／區段",options:["B2","B1","1F","2F","3F","公設大廳","中庭景觀"]},
+      {id:"stage",type:"select",label:"施工階段",options:["放樣作業","預埋作業","佈線作業","燈具安裝","調光測試","驗收"]},
+      {id:"items",type:"group",label:"查驗項目",itemName:"查驗點",fields:[
+        {id:"loc",type:"text",label:"查驗位置",ph:"如：3F 走廊東側"},
+        {id:"model",type:"text",label:"型號",ph:"如：RG-2814-30W"},
+        {id:"judge",type:"judge",label:"狀態判定"},
+        {id:"photos",type:"photo",label:"現場照片"},
+        {id:"desc",type:"textarea",label:"說明"}]},
+      {id:"summary",type:"textarea",label:"總摘要"}]},
+  T02:{ title:"出貨檢驗單",
+    sites:["高雄倉","台南倉","台中轉運站"],
+    aiRule:"你是出貨品管助理。請依照片判斷：外箱是否破損、標籤型號與數量是否清晰可辨、包裝是否足以保護商品。",
+    fields:[
+      {id:"site",type:"select",label:"出貨倉別",required:true,from:"sites"},
+      {id:"order",type:"text",label:"訂單編號",required:true,ph:"如：SO-2608-0142"},
+      {id:"buyer",type:"text",label:"收貨客戶"},
+      {id:"items",type:"group",label:"檢驗品項",itemName:"品項",fields:[
+        {id:"model",type:"text",label:"型號"},
+        {id:"qty",type:"number",label:"數量"},
+        {id:"judge",type:"judge",label:"檢驗結果"},
+        {id:"photos",type:"photo",label:"包裝／標籤照片"},
+        {id:"desc",type:"textarea",label:"異常說明"}]},
+      {id:"summary",type:"textarea",label:"備註"}]},
+  T03:{ title:"會勘記錄",
+    sites:["聯上-五福","元帥府","都市-澄德65"],
+    aiRule:"你是照明設計會勘助理。請依照片判斷：燈具佈設是否符合設計意圖、照度與眩光是否有疑慮、收邊工法是否妥適。",
+    fields:[
+      {id:"site",type:"select",label:"案件名稱",required:true,from:"sites"},
+      {id:"kind",type:"select",label:"會勘類別",required:true,options:["設計確認","施工查驗","缺失複查","竣工驗收"]},
+      {id:"parties",type:"multi",label:"與會單位",options:["業主","建築師","工程部","燈具廠商","水電包商","監造"]},
+      {id:"items",type:"group",label:"會勘內容",itemName:"議題",fields:[
+        {id:"loc",type:"text",label:"查驗位置"},
+        {id:"judge",type:"judge",label:"狀態判定"},
+        {id:"photos",type:"photo",label:"照片"},
+        {id:"desc",type:"textarea",label:"論述摘要"}]},
+      {id:"summary",type:"textarea",label:"結論與後續"}]}
+};
+
+const TYPES = [["text","單行文字"],["textarea","多行文字"],["number","數字"],
+  ["select","單選下拉"],["multi","多選標籤"],["judge","狀態判定"],
+  ["photo","照片上傳"],["group","可重複群組"]];
+const JUDGE = [["符合","j-ok"],["待確認","j-wait"],["不符合","j-bad"]];
+
+/* ════════ 欄位渲染 ════════ */
+function Field({ f, schema, val, onChange }) {
+  const set = v => onChange(f.id, v);
+  const opts = f.from ? (schema[f.from]||[]) : (f.options||[]);
+  if (f.type==="text"||f.type==="number")
+    return h("div",{className:"fld"},
+      h("label",{className:"lbl"},f.label,f.required&&h("span",{className:"req"},"*")),
+      h("input",{className:"inp",type:f.type==="number"?"number":"text",
+        placeholder:f.ph||"",value:val||"",onChange:e=>set(e.target.value)}));
+  if (f.type==="textarea")
+    return h("div",{className:"fld"},
+      h("label",{className:"lbl"},f.label),
+      h("textarea",{className:"inp",placeholder:f.ph||"",value:val||"",onChange:e=>set(e.target.value)}));
+  if (f.type==="select")
+    return h("div",{className:"fld"},
+      h("label",{className:"lbl"},f.label,f.required&&h("span",{className:"req"},"*")),
+      h("select",{className:"inp",value:val||"",onChange:e=>set(e.target.value)},
+        h("option",{value:""},"請選擇…"),opts.map(o=>h("option",{key:o,value:o},o))));
+  if (f.type==="multi"){ const a=val||[];
+    return h("div",{className:"fld"},
+      h("label",{className:"lbl"},f.label),
+      h("div",{className:"chips"},opts.map(o=>
+        h("button",{key:o,className:"chip"+(a.includes(o)?" on":""),
+          onClick:()=>set(a.includes(o)?a.filter(x=>x!==o):[...a,o])},o))));}
+  if (f.type==="judge")
+    return h("div",{className:"fld"},
+      h("label",{className:"lbl"},f.label),
+      h("div",{className:"chips"},JUDGE.map(([o,c])=>
+        h("button",{key:o,className:"chip "+c+(val===o?" on":""),
+          onClick:()=>set(val===o?"":o)},o))));
+  if (f.type==="photo") return h(Photo,{f,val,set});
+  return null;
+}
+
+function Photo({ f, val, set }) {
+  const ref=useRef(null); const arr=val||[];
+  const pick = e => {
+    Array.from(e.target.files||[]).forEach(file=>{
+      const r=new FileReader();
+      r.onload=ev=>{ const img=new Image();
+        img.onload=()=>{ const max=1024,sc=Math.min(1,max/Math.max(img.width,img.height));
+          const c=document.createElement("canvas");
+          c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+          c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+          set(a=>[...(a||[]),c.toDataURL("image/jpeg",0.72)]); };
+        img.src=ev.target.result; };
+      r.readAsDataURL(file); });
+    e.target.value="";
+  };
+  return h("div",{className:"fld"},
+    h("label",{className:"lbl"},f.label),
+    h("input",{ref,type:"file",accept:"image/*",multiple:true,style:{display:"none"},onChange:pick}),
+    h("button",{className:"drop",onClick:()=>ref.current.click()},"＋ 拍照或選擇照片"),
+    arr.length>0&&h("div",{className:"thumbs"},arr.map((src,i)=>
+      h("div",{key:i,className:"thumb"},h("img",{src}),
+        h("button",{className:"x",onClick:()=>set(a=>a.filter((_,j)=>j!==i))},"×")))));
+}
+
+function Group({ f, schema, rows, onChange }) {
+  const upd=(i,k,v)=>onChange(rows.map((r,j)=>j===i?{...r,[k]:typeof v==="function"?v(r[k]):v}:r));
+  return h("div",{className:"fld"},
+    h("label",{className:"lbl"},f.label),
+    rows.map((row,i)=>h("div",{key:i,className:"grp"},
+      h("div",{className:"grp-h"},
+        h("span",{className:"grp-n"},(f.itemName||"項目")+" "+(i+1)),
+        rows.length>1&&h("button",{className:"mini",onClick:()=>onChange(rows.filter((_,j)=>j!==i))},"移除")),
+      (f.fields||[]).map(sf=>h(Field,{key:sf.id,f:sf,schema,val:row[sf.id],onChange:(k,v)=>upd(i,k,v)})))),
+    h("button",{className:"mini",onClick:()=>onChange([...rows,{}])},"＋ 新增"+(f.itemName||"項目")));
+}
+
+/* ════════ 現場填報 ════════ */
+function FieldApp({ tenant, schema, onSubmit, recs, dispatches, onComplete }) {
+  const blank=()=>{ const d={};
+    (schema.fields||[]).forEach(f=>{ d[f.id]=f.type==="group"?[{}]:f.type==="multi"?[]:""; });
+    d.__staff=tenant.staff[0]; return d; };
+  const [data,setData]=useState(blank);
+  const [ok,setOk]=useState(null);
+  const [tab,setTab]=useState("form");
+  useEffect(()=>setData(blank()),[tenant.id,schema.fields]);
+  const set=(k,v)=>setData(p=>({...p,[k]:typeof v==="function"?v(p[k]):v}));
+  const miss=(schema.fields||[]).filter(f=>f.required&&!data[f.id]).map(f=>f.label);
+  const mine=(recs||[]).filter(r=>r.__staff===data.__staff);
+  const myJobs=(dispatches||[]).filter(d=>d.staff===data.__staff);
+  const todo=myJobs.filter(d=>d.status!=="done").length;
+  return h("div",{className:"phone"},
+    h("div",{className:"phone-bar"},h("span",schema.title),h("span",now())),
+    h("div",{className:"phone-body"},
+      h("div",{className:"fld"},
+        h("label",{className:"lbl"},"填報人員"),
+        h("select",{className:"inp",value:data.__staff,onChange:e=>set("__staff",e.target.value)},
+          tenant.staff.map(s=>h("option",{key:s},s)))),
+      h("div",{className:"tabs"},
+        h("button",{className:"tab"+(tab==="form"?" on":""),onClick:()=>setTab("form")},"填　報"),
+        h("button",{className:"tab"+(tab==="jobs"?" on":""),onClick:()=>setTab("jobs")},
+          "我的派工"+(todo?"（"+todo+"）":"")),
+        h("button",{className:"tab"+(tab==="mine"?" on":""),onClick:()=>setTab("mine")},
+          "我的紀錄"+(mine.length?"（"+mine.length+"）":""))),
+      tab==="form" && h(F,null,
+        ok&&h("div",{className:"sent"},"✓ 已送出　",ok,
+          h("div",{style:{color:"#6FA98A",fontSize:"11.5px",marginTop:"4px"}},
+            "辦公室端已即時收到，現場看不到彙總資料；可在「我的紀錄」回查此筆")),
+        (schema.fields||[]).map(f=>f.type==="group"
+          ? h(Group,{key:f.id,f,schema,rows:data[f.id]||[{}],onChange:v=>set(f.id,v)})
+          : h(Field,{key:f.id,f,schema,val:data[f.id],onChange:set})),
+        h("button",{className:"btn",disabled:miss.length>0,
+          onClick:()=>{ onSubmit(data); setOk(now()); setData(blank());
+            window.scrollTo({top:0,behavior:"smooth"}); }},
+          miss.length>0?"尚缺："+miss.join("、"):"送　出")),
+      tab==="jobs" && h(MyDispatches,{jobs:myJobs,onComplete}),
+      tab==="mine" && h(MyRecords,{mine})));
+}
+
+function MyDispatches({ jobs, onComplete }) {
+  if(!jobs.length) return h("div",{className:"empty"},
+    h("div",null,"目前沒有指派"),
+    h("div",{style:{fontSize:"12px"}},"辦公室主管在「派工行事曆」指派工作後，會出現在這裡"));
+  const sorted=[...jobs].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  return h("div",null, sorted.map(d=>
+    h("div",{key:d.id,className:"dp-item"+(d.status==="done"?" done":"")},
+      h("span",{className:"dp-date"},d.date),
+      h("div",{className:"dp-main"},
+        h("div",null,d.site),
+        d.note&&h("div",{className:"dp-note"},d.note)),
+      d.status==="done"
+        ? h("span",{className:"tag ok"},"已完成")
+        : h("button",{className:"mini",onClick:()=>onComplete(d.id)},"回報完成"))));
+}
+
+function MyRecords({ mine }) {
+  if(!mine.length) return h("div",{className:"empty"},
+    h("div",null,"尚無紀錄"),
+    h("div",{style:{fontSize:"12px"}},"送出後會出現在這裡，方便之後回查自己填過什麼"));
+  return h("div",null, mine.map(r=>{
+    const bad=(r.items||[]).some(x=>x.judge==="不符合");
+    const wait=(r.items||[]).some(x=>x.judge==="待確認");
+    const pics=(r.items||[]).flatMap(x=>x.photos||[]);
+    return h("div",{key:r.id,className:"card"},
+      h("div",{className:"card-h"},
+        h("span",{className:"card-t"},r.site||"（未填）"),
+        h("span",{className:"card-m"},r.time)),
+      h("div",{style:{marginBottom:"8px"}},
+        bad?h("span",{className:"tag bad"},"含不符合項")
+        :wait?h("span",{className:"tag wait"},"待確認")
+        :h("span",{className:"tag ok"},"全數符合")),
+      (r.items||[]).length>0&&h("dl",{className:"kv"},
+        r.items.map((it,j)=>h(F,{key:j},h("dt",null,"#"+(j+1)),
+          h("dd",null,[it.loc,it.model,it.judge,it.desc].filter(Boolean).join("　·　")||"（空白）")))),
+      pics.length>0&&h("div",{className:"card-thumbs"},pics.map((p,j)=>h("img",{key:j,src:p}))),
+      r.ai&&h("div",{className:"ai"},
+        h("div",{className:"ai-h"},"AI 判讀"),
+        h("div",{className:"ai-body"},r.ai)));
+  }));
+}
+
+/* ════════ AI 判讀（含完整錯誤處理與降級） ════════ */
+async function analyze(rec, schema) {
+  const pics=[]; (rec.items||[]).forEach(it=>(it.photos||[]).forEach(p=>pics.push(p)));
+  const ctx=(rec.items||[]).map((it,i)=>
+    `${i+1}. ${[it.loc,it.model,it.qty].filter(Boolean).join(" / ")||"-"}｜判定:${it.judge||"未判定"}｜${it.desc||"無說明"}`).join("\n");
+
+  const build = usePics => {
+    const c=[];
+    if(usePics) pics.slice(0,2).forEach(p=>{
+      const m=/^data:(image\/(?:jpeg|png|gif|webp));base64,(.+)$/.exec(p);
+      if(m) c.push({type:"image",source:{type:"base64",media_type:m[1],data:m[2]}});
+    });
+    c.push({type:"text",text:
+      (schema.aiRule||"你是現場品管助理。")+"\n\n填報內容：\n"+(ctx||"（無明細）")+"\n\n"+
+      (usePics&&pics.length?"":"（本次無照片，請僅依文字判斷並說明此限制。）\n")+
+      "請用繁體中文回覆，分兩段，總長不超過 120 字：\n"+
+      "【判讀】描述觀察到的狀況。\n【建議】給出一項最優先的處理建議。\n"+
+      "不要條列符號，不要開場白。"});
+    return c;
+  };
+
+  const call = async usePics => {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1000,
+        messages:[{role:"user",content:build(usePics)}] })});
+    const raw = await res.text();
+    if(!res.ok) throw new Error("HTTP "+res.status+"｜"+raw.slice(0,220));
+    let d; try{ d=JSON.parse(raw); }catch(e){ throw new Error("回應非 JSON｜"+raw.slice(0,160)); }
+    if(d.error) throw new Error((d.error.type||"error")+"｜"+(d.error.message||""));
+    if(!Array.isArray(d.content)) throw new Error("回應缺少 content｜"+raw.slice(0,160));
+    const t=d.content.filter(c=>c.type==="text").map(c=>c.text).join("\n").trim();
+    if(!t) throw new Error("回應內容為空");
+    return t;
+  };
+
+  if(pics.length){
+    try { return { text: await call(true), mode:"照片＋文字" }; }
+    catch(e){ // 降級：改用純文字，不讓整個判讀失敗
+      const t = await call(false);
+      return { text:t, mode:"純文字（照片判讀失敗："+e.message.slice(0,60)+"）" };
+    }
+  }
+  return { text: await call(false), mode:"純文字（本次無照片）" };
+}
+
+/* ════════ 辦公室看板 ════════ */
+function OfficeApp({ tenant, schema, recs, setRecs, notes, dispatches, onAddDispatch }) {
+  const mine = recs.filter(r=>r.tenantId===tenant.id);
+  const myJobs = (dispatches||[]).filter(d=>d.tenantId===tenant.id);
+  const [tab,setTab]=useState("board");
+  const run = async id => {
+    setRecs(rs=>rs.map(r=>r.id===id?{...r,aiState:"load",aiErr:null}:r));
+    const rec = recs.find(r=>r.id===id);
+    try{ const out = await analyze(rec, schema);
+      setRecs(rs=>rs.map(r=>r.id===id?{...r,aiState:null,ai:out.text,aiMode:out.mode}:r)); }
+    catch(e){ setRecs(rs=>rs.map(r=>r.id===id?{...r,aiState:null,aiErr:e.message}:r)); }
+  };
+  return h("div",{className:"cols"},
+    h("div",{className:"main"},
+      h("div",{className:"tabs"},
+        h("button",{className:"tab"+(tab==="board"?" on":""),onClick:()=>setTab("board")},"即時看板"),
+        h("button",{className:"tab"+(tab==="cal"?" on":""),onClick:()=>setTab("cal")},"派工行事曆")),
+      tab==="cal" && h(DispatchCalendar,{tenant,schema,jobs:myJobs,onAdd:onAddDispatch}),
+      tab==="board" && h(F,null,
+      h("div",{className:"bar"},
+        h("span",{className:"live"},h("span",{className:"pulse"}),"LIVE 即時連動"),
+        h("span",{className:"count"},tenant.name+" · 共 "+mine.length+" 筆"),
+        h("span",{className:"count",style:{color:"var(--dim)"}},"僅顯示本公司資料")),
+      mine.length===0
+        ? h("div",{className:"empty"},h("div",null,"尚無回報"),
+            h("div",{style:{fontSize:"12px"}},"切換為現場人員身分填一張表送出，這裡會即時浮現"))
+        : mine.map((r,i)=>{
+            const bad=(r.items||[]).some(x=>x.judge==="不符合");
+            const wait=(r.items||[]).some(x=>x.judge==="待確認");
+            const pics=(r.items||[]).flatMap(x=>x.photos||[]);
+            return h("div",{key:r.id,className:"card"+(i===0?" new":"")},
+              h("div",{className:"card-h"},
+                h("span",{className:"card-t"},r.site||"（未填）"),
+                h("span",{className:"card-m"},r.time+" · "+r.__staff)),
+              h("div",{style:{marginBottom:"8px"}},
+                bad?h("span",{className:"tag bad"},"含不符合項")
+                :wait?h("span",{className:"tag wait"},"待確認")
+                :h("span",{className:"tag ok"},"全數符合")),
+              h("dl",{className:"kv"},
+                (schema.fields||[]).filter(f=>f.type!=="group"&&f.id!=="site"&&r[f.id]&&r[f.id].length)
+                  .map(f=>h(F,{key:f.id},h("dt",null,f.label),
+                    h("dd",null,Array.isArray(r[f.id])?r[f.id].join("、"):r[f.id])))),
+              (r.items||[]).length>0&&h("dl",{className:"kv",style:{marginTop:"7px"}},
+                r.items.map((it,j)=>h(F,{key:j},h("dt",null,"#"+(j+1)),
+                  h("dd",null,[it.loc,it.model,it.qty,it.judge,it.desc].filter(Boolean).join("　·　")||"（空白）")))),
+              pics.length>0&&h("div",{className:"card-thumbs"},pics.map((p,j)=>h("img",{key:j,src:p}))),
+              h("div",{className:"ai"},
+                h("div",{className:"ai-h"},"AI 判讀",
+                  r.aiMode&&h("span",{style:{color:"var(--dim)",fontWeight:400,letterSpacing:0}},"（"+r.aiMode+"）"),
+                  r.aiState!=="load"&&h("button",{className:"mini",style:{marginLeft:"auto"},
+                    onClick:()=>run(r.id)},r.ai||r.aiErr?"重新判讀":"執行判讀")),
+                r.aiState==="load"&&h("div",{className:"ai-load"},"分析中…"),
+                r.ai&&h("div",{className:"ai-body"},r.ai),
+                r.aiErr&&h("div",{className:"err"},"判讀失敗：",r.aiErr),
+                !r.aiState&&!r.ai&&!r.aiErr&&h("div",{className:"ai-load"},"尚未判讀")));
+          }))),
+    h("div",{className:"side"},
+      h("div",{className:"line-box"},
+        h("div",{className:"line-h"},"● LINE 通知（模擬）"),
+        h("div",{className:"line-b"},
+          notes.length===0
+            ? h("div",{className:"line-empty"},"尚無通知",h("br"),
+                "當現場填報出現「不符合」判定時，此處會即時推播")
+            : notes.map(n=>h("div",{key:n.id,className:"msg"},
+                h("div",{className:"m-t"},"⚠ 現場異常通報"),
+                h("div",null,n.body),
+                h("div",{className:"m-time"},n.time)))))));
+}
+
+/* ════════ 派工行事曆 ════════ */
+const WD=["日","一","二","三","四","五","六"];
+const pad2=n=>String(n).padStart(2,"0");
+const toDateStr=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+
+function DispatchCalendar({ tenant, schema, jobs, onAdd }) {
+  const [mo,setMo]=useState(0);
+  const [f,setF]=useState({staff:tenant.staff[0],site:"",date:toDateStr(new Date()),note:""});
+  const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+mo);
+  const y=base.getFullYear(), m=base.getMonth();
+  const first=new Date(y,m,1), startWd=first.getDay();
+  const days=new Date(y,m+1,0).getDate();
+  const cells=[]; for(let i=0;i<startWd;i++) cells.push(null);
+  for(let d=1;d<=days;d++) cells.push(d);
+  const todayStr=toDateStr(new Date());
+  const sites=schema.sites||[];
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  const canAdd=f.staff&&f.site&&f.date;
+  return h("div",null,
+    h("div",{className:"dp-form"},
+      h("div",{className:"dp-f"},h("label",{className:"lbl"},"日期"),
+        h("input",{type:"date",className:"inp sm",value:f.date,onChange:e=>set("date",e.target.value)})),
+      h("div",{className:"dp-f"},h("label",{className:"lbl"},"派工人員"),
+        h("select",{className:"inp sm",value:f.staff,onChange:e=>set("staff",e.target.value)},
+          tenant.staff.map(s=>h("option",{key:s},s)))),
+      h("div",{className:"dp-f grow"},h("label",{className:"lbl"},"案場／據點"),
+        sites.length
+          ? h("select",{className:"inp sm",value:f.site,onChange:e=>set("site",e.target.value)},
+              h("option",{value:""},"請選擇…"),sites.map(s=>h("option",{key:s},s)))
+          : h("input",{className:"inp sm",placeholder:"輸入案場名稱",value:f.site,onChange:e=>set("site",e.target.value)})),
+      h("div",{className:"dp-f grow"},h("label",{className:"lbl"},"備註（選填）"),
+        h("input",{className:"inp sm",placeholder:"如：帶捲尺與樣品",value:f.note,onChange:e=>set("note",e.target.value)})),
+      h("button",{className:"dp-btn",disabled:!canAdd,
+        onClick:()=>{ onAdd({...f}); setF(p=>({...p,site:"",note:""})); }},"＋ 指派")),
+    h("div",{className:"cal-nav"},
+      h("button",{onClick:()=>setMo(v=>v-1)},"‹"),
+      h("span",{className:"cal-mo"},y+" 年 "+(m+1)+" 月"),
+      h("button",{onClick:()=>setMo(v=>v+1)},"›"),
+      mo!==0&&h("button",{onClick:()=>setMo(0)},"回今月")),
+    h("div",{className:"cal-grid"},
+      WD.map(w=>h("div",{key:w,className:"cal-wd"},w)),
+      cells.map((d,i)=>{
+        if(d===null) return h("div",{key:i,className:"cal-cell out"});
+        const ds=y+"-"+pad2(m+1)+"-"+pad2(d);
+        const list=jobs.filter(j=>j.date===ds);
+        return h("div",{key:i,className:"cal-cell"+(ds===todayStr?" today":"")},
+          h("div",{className:"cal-d"},d),
+          list.map(j=>h("div",{key:j.id,className:"cal-chip"+(j.status==="done"?" done":"")},
+            j.staff+"→"+j.site)));
+      })));
+}
+
+/* ════════ 設定包編輯器（表單式，非程式碼） ════════ */
+function Admin({ tenant, schema, setSchema }) {
+  const [showJson,setShowJson]=useState(false);
+  const upd = fn => setSchema(s=>{ const n=JSON.parse(JSON.stringify(s)); fn(n); return n; });
+  const move = (arr,i,d)=>{ const j=i+d; if(j<0||j>=arr.length) return;
+    const t=arr[i]; arr[i]=arr[j]; arr[j]=t; };
+
+  const Row = ({ f, i, list, isSub }) =>
+    h(F,null,
+      h("div",{className:"ed-row"+(f.type==="group"?" g":"")},
+        h("span",{className:"ed-i"},(isSub?"‧":"")+(i+1)),
+        h("input",{className:"inp sm",value:f.label,placeholder:"欄位名稱",
+          onChange:e=>upd(n=>{ const L=isSub?n.fields[isSub].fields:n.fields; L[i].label=e.target.value; })}),
+        h("select",{className:"inp sm",value:f.type,
+          onChange:e=>upd(n=>{ const L=isSub?n.fields[isSub].fields:n.fields;
+            L[i].type=e.target.value;
+            if(e.target.value==="group"&&!L[i].fields){L[i].fields=[];L[i].itemName="項目";} })},
+          TYPES.filter(([v])=>!(isSub&&v==="group")).map(([v,t])=>h("option",{key:v,value:v},t))),
+        h("button",{className:"mini"+(f.required?" on":""),
+          onClick:()=>upd(n=>{ const L=isSub?n.fields[isSub].fields:n.fields; L[i].required=!L[i].required; })},
+          f.required?"必填":"選填"),
+        h("button",{className:"mini",onClick:()=>upd(n=>move(isSub?n.fields[isSub].fields:n.fields,i,-1))},"↑"),
+        h("button",{className:"mini",onClick:()=>upd(n=>move(isSub?n.fields[isSub].fields:n.fields,i,1))},"↓"),
+        h("button",{className:"mini",onClick:()=>upd(n=>{ const L=isSub?n.fields[isSub].fields:n.fields; L.splice(i,1); })},"×")),
+      (f.type==="select"||f.type==="multi")&&!f.from&&
+        h("div",{style:{margin:"-3px 0 8px 34px"}},
+          h("input",{className:"inp sm",placeholder:"選項，用逗號分隔",
+            value:(f.options||[]).join("，"),
+            onChange:e=>upd(n=>{ const L=isSub?n.fields[isSub].fields:n.fields;
+              L[i].options=e.target.value.split(/[，,]/).map(s=>s.trim()).filter(Boolean); })})),
+      f.type==="select"&&f.from&&
+        h("div",{style:{margin:"-3px 0 8px 34px",fontSize:"11.5px",color:"var(--dim)"}},
+          "選項來自主檔：",f.from,"（於下方「案場／據點主檔」維護）"),
+      f.type==="group"&&h("div",{className:"sub"},
+        h("div",{style:{display:"flex",gap:"8px",alignItems:"center",margin:"2px 0 8px"}},
+          h("span",{className:"lbl",style:{margin:0}},"群組項目稱呼"),
+          h("input",{className:"inp sm",style:{width:"120px"},value:f.itemName||"",
+            onChange:e=>upd(n=>{n.fields[i].itemName=e.target.value;})})),
+        (f.fields||[]).map((sf,j)=>h(Row,{key:sf.id,f:sf,i:j,isSub:i})),
+        h("button",{className:"mini",onClick:()=>upd(n=>{
+          n.fields[i].fields=[...(n.fields[i].fields||[]),
+            {id:uid("f"),type:"text",label:"新欄位"}]; })},"＋ 新增子欄位")));
+
+  return h("div",null,
+    h("div",{className:"note"},
+      "這是「",tenant.name,"」的設定包。用下方表單新增或調整欄位，左側現場表單會立刻跟著改變——",
+      "使用者不需要看懂任何程式碼。系統在背後把它存成 JSON，這也是新增一個產業不必寫程式的原因。"),
+    h("div",{className:"fld"},
+      h("label",{className:"lbl"},"表單名稱"),
+      h("input",{className:"inp",value:schema.title,
+        onChange:e=>upd(n=>{n.title=e.target.value;})})),
+    h("div",{className:"fld"},
+      h("label",{className:"lbl"},"案場／據點主檔（逗號分隔，供「選項來自主檔」的欄位使用）"),
+      h("input",{className:"inp",value:(schema.sites||[]).join("，"),
+        onChange:e=>upd(n=>{n.sites=e.target.value.split(/[，,]/).map(s=>s.trim()).filter(Boolean);})})),
+    h("div",{className:"fld"},
+      h("label",{className:"lbl"},"AI 判讀重點（告訴 AI 這個產業要看什麼）"),
+      h("textarea",{className:"inp",value:schema.aiRule||"",
+        onChange:e=>upd(n=>{n.aiRule=e.target.value;})})),
+    h("div",{className:"sec-t"},"表單欄位"),
+    (schema.fields||[]).map((f,i)=>h(Row,{key:f.id,f,i})),
+    h("div",{style:{display:"flex",gap:"8px",marginTop:"10px"}},
+      h("button",{className:"mini",onClick:()=>upd(n=>{
+        n.fields=[...n.fields,{id:uid("f"),type:"text",label:"新欄位"}];})},"＋ 新增欄位"),
+      h("button",{className:"mini"+(showJson?" on":""),
+        onClick:()=>setShowJson(v=>!v)},showJson?"隱藏 JSON":"檢視背後的 JSON")),
+    showJson&&h("pre",{className:"json",style:{marginTop:"12px"}},JSON.stringify(schema,null,2)));
+}
+
+/* ════════ 登入 ════════ */
+function Login({ onGo }) {
+  const [t,setT]=useState(null), [r,setR]=useState(null);
+  return h("div",{className:"login"},
+    h("h1",null,"現場作業數位平台"),
+    h("p",null,"這是原型的身分模擬。實際上線時，現場人員與辦公室使用不同帳號登入，",
+      "看到的畫面與可存取的資料完全不同；不同公司之間的資料互相隔離。"),
+    h("div",{className:"sec-t"},"選擇公司（租戶）"),
+    h("div",{className:"pick"},TENANTS.map(x=>
+      h("button",{key:x.id,className:"opt"+(t===x.id?" on":""),onClick:()=>setT(x.id)},
+        h("div",null,h("div",{className:"opt-n"},x.name),
+          h("div",{className:"opt-d"},x.industry)),
+        h("span",{className:"opt-c"},x.code)))),
+    h("div",{className:"sec-t"},"選擇身分"),
+    h("div",{className:"pick"},
+      [["field","現場人員","手機填報。只能送出自己的紀錄，看不到彙總看板。"],
+       ["office","辦公室主管","即時看板、AI 判讀、LINE 異常通知。不填表。"],
+       ["admin","系統管理者","維護表單欄位與主檔。一般用表單設定，不需寫程式。"]]
+      .map(([k,n,d])=>h("button",{key:k,className:"opt"+(r===k?" on":""),onClick:()=>setR(k)},
+        h("div",null,h("div",{className:"opt-n"},n),h("div",{className:"opt-d"},d))))),
+    h("button",{className:"btn",style:{marginTop:"22px"},disabled:!t||!r,
+      onClick:()=>onGo(t,r)},!t||!r?"請選擇公司與身分":"進　入"));
+}
+
+/* ════════ App ════════ */
+function App(){
+  const [sess,setSess]=useState(null);
+  const [schemas,setSchemas]=useState(INIT_SCHEMAS);
+  const [recs,setRecs]=useState([]);
+  const [notes,setNotes]=useState([]);
+  const [dispatches,setDispatches]=useState([]);
+
+  if(!sess) return h("div",{className:"wrap"},
+    h(Login,{onGo:(t,r)=>setSess({t,r})}));
+
+  const tenant=TENANTS.find(x=>x.id===sess.t);
+  const schema=schemas[sess.t];
+  const setSchema=fn=>setSchemas(s=>({...s,[sess.t]:typeof fn==="function"?fn(s[sess.t]):fn}));
+
+  const addDispatch = d => setDispatches(ds=>[...ds,
+    { ...d, id:uid("D"), tenantId:tenant.id, status:"assigned", createdAt:now() }]);
+  const completeDispatch = id => setDispatches(ds=>ds.map(d=>
+    d.id===id?{...d,status:"done",completedAt:now()}:d));
+
+  const submit = data => {
+    const id=uid("R");
+    setRecs(rs=>[{...data,id,tenantId:tenant.id,time:now()},...rs]);
+    const bad=(data.items||[]).filter(i=>i.judge==="不符合");
+    if(bad.length){
+      const b=bad[0];
+      setNotes(ns=>[{ id:uid("N"), time:new Date().toLocaleString("zh-TW",{hour12:false}),
+        body:`${data.site||"未填案場"}\n${[b.loc,b.model].filter(Boolean).join(" / ")||"未標位置"}\n判定：不符合\n${b.desc||"（無說明）"}\n填報：${data.__staff}` },...ns]);
+    }
+  };
+
+  const roleTag={field:["f","現場人員"],office:["o","辦公室主管"],admin:["a","系統管理者"]}[sess.r];
+
+  return h("div",{className:"wrap"},
+    h("div",{className:"hdr"},
+      h("span",{className:"logo"},"現場作業數位平台 ",h("em",null,"rev2")),
+      h("div",{className:"who"},
+        h("span",null,tenant.name),
+        h("span",{className:"badge "+roleTag[0]},roleTag[1]),
+        h("button",{className:"mini",onClick:()=>setSess(null)},"切換身分"))),
+    sess.r==="field"  && h(FieldApp,{tenant,schema,onSubmit:submit,
+      recs:recs.filter(r=>r.tenantId===tenant.id),
+      dispatches:dispatches.filter(d=>d.tenantId===tenant.id),
+      onComplete:completeDispatch}),
+    sess.r==="office" && h(OfficeApp,{tenant,schema,recs,setRecs,
+      notes:notes.filter(n=>true),
+      dispatches,onAddDispatch:addDispatch}),
+    sess.r==="admin"  && h(Admin,{tenant,schema,setSchema}));
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+</script>
+</body>
+</html>
