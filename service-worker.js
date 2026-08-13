@@ -1,10 +1,10 @@
 /* ════════════════════════════════════════════════════════════
    service-worker.js — app shell 快取 + runtime cache
-   同源請求走 cache-first；CDN（React/html2canvas/jsPDF）走
-   stale-while-revalidate；離線時 App Shell 提供基本 fallback。
+   同源請求走 network-first（有網路必拿最新版，離線才退回快取）；
+   CDN（React/html2canvas/jsPDF）走 stale-while-revalidate。
    ════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const APP_SHELL_CACHE = "gasfield-app-shell-" + CACHE_VERSION;
 const RUNTIME_CACHE = "gasfield-runtime-" + CACHE_VERSION;
 
@@ -43,15 +43,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
 
   if (url.origin === self.location.origin) {
-    // 同源：cache-first，網路成功時更新快取
+    // 同源：network-first，明確繞過瀏覽器 HTTP 快取（no-store）避免 CDN/主機端
+    // Cache-Control 造成「已改版但還是拿到舊檔」；離線或網路失敗時才退回快取
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const fetchPromise = fetch(req).then((res) => {
-          if (res && res.ok) caches.open(APP_SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
-          return res;
-        }).catch(() => cached);
-        return cached || fetchPromise;
-      })
+      fetch(req, { cache: "no-store" }).then((res) => {
+        if (res && res.ok) caches.open(APP_SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        return res;
+      }).catch(() => caches.match(req))
     );
     return;
   }
