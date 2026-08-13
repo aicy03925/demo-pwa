@@ -11,6 +11,11 @@ const MINS  = ["00","15","30","45"];
 const SIG_COLS = ["填報人員","專案審核","主管審核"];
 const DESIGN_MEETING_PROGRESS = ["概念發展","設計圖面繪製","施工圖面及規範作業","工程執行"];
 
+function formatDateSlash(dateStr) {
+  if (!dateStr) return "";
+  return dateStr.replace(/-/g, "/");
+}
+
 function getCalculatedHoursText(startH, startM, endH, endM) {
   if (!startH || !startM || !endH || !endM) return "—";
   let start = parseInt(startH, 10) * 60 + parseInt(startM, 10);
@@ -116,17 +121,6 @@ function SurveyForm({ data, setData, caseData }) {
   );
 }
 
-function MeetingForm({ data, setData }) {
-  const set = (k, v) => setData(p => ({ ...p, [k]: v }));
-  return e(F, null,
-    e(Sel, { label: "會議類型", value: data.meetingType, onChange: v => set("meetingType", v), options: ["圖面盤整溝通","現場機電執行前討論","執行問題討論","需求整合會議","審查會議"] }),
-    e(Txt, { label: "會議主題", value: data.topic, onChange: v => set("topic", v), placeholder: "輸入會議主題" }),
-    e(Txt, { label: "與會人員", value: data.attendees, onChange: v => set("attendees", v), placeholder: "輸入與會人員（以逗號分隔）" }),
-    e(Txt, { label: "決議追蹤事項", value: data.resolution, onChange: v => set("resolution", v), placeholder: "記錄決議事項與追蹤項目...", multi: true }),
-    e(Photo, { label: "會議現場照片", photo: data.photo, onCapture: v => set("photo", v) })
-  );
-}
-
 function DesignMeetingForm({ data, setData }) {
   const set = (k, v) => setData(p => ({ ...p, [k]: v }));
   const timeSelStyle = { flex: 1, padding: "10px 4px", fontSize: 13, borderRadius: 8, border: "1.5px solid #D1D5DB", textAlign: "center" };
@@ -134,7 +128,7 @@ function DesignMeetingForm({ data, setData }) {
     e("div", { style: { marginBottom: 15 } },
       e("label", { style: S.label }, "會議時間"),
       e("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
-        e("input", { value: data.meetingDate, onChange: ev => set("meetingDate", ev.target.value), placeholder: "會議日期 YYYY/MM/DD", style: { flex: "1 1 140px", padding: "11px 13px", fontSize: 15, borderRadius: 9, border: "1.5px solid #D1D5DB", background: "#fff", fontFamily: "inherit" } }),
+        e("input", { type: "date", value: data.meetingDate, onChange: ev => set("meetingDate", ev.target.value), style: { flex: "1 1 140px", padding: "11px 13px", fontSize: 15, borderRadius: 9, border: "1.5px solid #D1D5DB", background: "#fff", fontFamily: "inherit", cursor: "pointer" } }),
         e("div", { style: { display: "flex", gap: 4, alignItems: "center", flex: "2 1 240px" } },
           e("select", { value: data.meetingStartH, onChange: ev => set("meetingStartH", ev.target.value), style: timeSelStyle }, e("option", { value: "" }, "時"), HOURS.map(v => e("option", { key: v, value: v }, v))),
           e("select", { value: data.meetingStartM, onChange: ev => set("meetingStartM", ev.target.value), style: timeSelStyle }, e("option", { value: "" }, "分"), MINS.map(v => e("option", { key: v, value: v }, v))),
@@ -152,7 +146,40 @@ function DesignMeetingForm({ data, setData }) {
     e(Txt, { label: "會議主旨", value: data.topic, onChange: v => set("topic", v), placeholder: "輸入會議主旨" }),
     e(Txt, { label: "會議內容", value: data.content, onChange: v => set("content", v), placeholder: "記錄會議討論內容...", multi: true }),
     e(Txt, { label: "會議後執行內容", value: data.postActions, onChange: v => set("postActions", v), placeholder: "記錄會議後續執行事項...", multi: true }),
-    e("div", { style: { marginTop: 10, padding: "11px 13px", background: "#FDF2F8", border: "1.5px solid #FBCFE8", borderRadius: 9, fontSize: 12, color: "#9D174D", lineHeight: 1.7 } }, "＊簽核區將於下載的 PDF 中提供整頁簽署框，供對外確認與意見回覆使用。")
+    e(MultiPhoto, { label: "附件", photos: data.attachments, onChange: v => set("attachments", v) }),
+    e("div", { style: { marginTop: 10, padding: "11px 13px", background: "#FDF2F8", border: "1.5px solid #FBCFE8", borderRadius: 9, fontSize: 12, color: "#9D174D", lineHeight: 1.7 } }, "＊簽核區將於下載的 PDF 中提供簽署框，供對外確認與意見回覆使用。")
+  );
+}
+
+/* ─── 工程部：工地會議（沿用設計部會議記錄架構，附件改為「說明＋照片」可複組新增，並新增相關部門配合事宜） ─── */
+function SiteMeetingForm({ data, setData }) {
+  const set = (k, v) => setData(p => ({ ...p, [k]: v }));
+  const timeSelStyle = { flex: 1, padding: "10px 4px", fontSize: 13, borderRadius: 8, border: "1.5px solid #D1D5DB", textAlign: "center" };
+  return e(F, null,
+    e("div", { style: { marginBottom: 15 } },
+      e("label", { style: S.label }, "會議時間"),
+      e("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
+        e("input", { type: "date", value: data.meetingDate, onChange: ev => set("meetingDate", ev.target.value), style: { flex: "1 1 140px", padding: "11px 13px", fontSize: 15, borderRadius: 9, border: "1.5px solid #D1D5DB", background: "#fff", fontFamily: "inherit", cursor: "pointer" } }),
+        e("div", { style: { display: "flex", gap: 4, alignItems: "center", flex: "2 1 240px" } },
+          e("select", { value: data.meetingStartH, onChange: ev => set("meetingStartH", ev.target.value), style: timeSelStyle }, e("option", { value: "" }, "時"), HOURS.map(v => e("option", { key: v, value: v }, v))),
+          e("select", { value: data.meetingStartM, onChange: ev => set("meetingStartM", ev.target.value), style: timeSelStyle }, e("option", { value: "" }, "分"), MINS.map(v => e("option", { key: v, value: v }, v))),
+          e("span", { style: { color: "#9CA3AF", padding: "0 2px" } }, "—"),
+          e("select", { value: data.meetingEndH, onChange: ev => set("meetingEndH", ev.target.value), style: timeSelStyle }, e("option", { value: "" }, "時"), HOURS.map(v => e("option", { key: v, value: v }, v))),
+          e("select", { value: data.meetingEndM, onChange: ev => set("meetingEndM", ev.target.value), style: timeSelStyle }, e("option", { value: "" }, "分"), MINS.map(v => e("option", { key: v, value: v }, v)))
+        )
+      )
+    ),
+    e(Txt, { label: "會議地點", value: data.location, onChange: v => set("location", v), placeholder: "輸入會議地點" }),
+    e(Txt, { label: "與會人員", value: data.attendees, onChange: v => set("attendees", v), placeholder: "輸入與會人員（以逗號分隔）" }),
+    e(Txt, { label: "記錄人員", value: data.recorder, onChange: v => set("recorder", v), placeholder: "輸入記錄人員姓名" }),
+    e(Txt, { label: "項目名稱", value: data.projectName, onChange: v => set("projectName", v), placeholder: "輸入項目/案件名稱" }),
+    e(Sel, { label: "項目進程", value: data.progress, onChange: v => set("progress", v), options: PROGRESS }),
+    e(Txt, { label: "會議主旨", value: data.topic, onChange: v => set("topic", v), placeholder: "輸入會議主旨" }),
+    e(Txt, { label: "會議內容", value: data.content, onChange: v => set("content", v), placeholder: "記錄會議討論內容...", multi: true }),
+    e(Txt, { label: "會議後執行內容", value: data.postActions, onChange: v => set("postActions", v), placeholder: "記錄會議後續執行事項...", multi: true }),
+    e(DeptCoordGroups, { label: "相關部門配合事宜", groups: data.deptCoord, onChange: v => set("deptCoord", v) }),
+    e(AttachmentGroups, { label: "附件", groups: data.attachmentGroups, onChange: v => set("attachmentGroups", v) }),
+    e("div", { style: { marginTop: 10, padding: "11px 13px", background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 9, fontSize: 12, color: "#1E3A8A", lineHeight: 1.7 } }, "＊簽核區將於下載的 PDF 中提供簽署框，供對外確認與意見回覆使用。")
   );
 }
 
@@ -431,8 +458,8 @@ function defaultDataFor(card, tenant) {
   if (!card) return {};
   switch (card.formKind) {
     case "survey": return { project:"", contact:"", progress:"", staff:"", timeStartH:"", timeStartM:"", timeEndH:"", timeEndM:"", summary:"", items:[{ photos:[null,null], location:"", lightModel:"", execType:"", customExec:"" }] };
-    case "meeting": return { meetingType:"", topic:"", attendees:"", resolution:"", photo:null };
-    case "design_meeting": return { meetingDate:"", meetingStartH:"", meetingStartM:"", meetingEndH:"", meetingEndM:"", location:"", attendees:"", recorder:"", projectName:"", progress:"", topic:"", content:"", postActions:"" };
+    case "design_meeting": return { meetingDate:"", meetingStartH:"", meetingStartM:"", meetingEndH:"", meetingEndM:"", location:"", attendees:"", recorder:"", projectName:"", progress:"", topic:"", content:"", postActions:"", attachments:[] };
+    case "site_meeting": return { meetingDate:"", meetingStartH:"", meetingStartM:"", meetingEndH:"", meetingEndM:"", location:"", attendees:"", recorder:"", projectName:"", progress:"", topic:"", content:"", postActions:"", deptCoord:[], attachmentGroups:[] };
     case "install": return { zone:"", material:"", inspector:"", checkResult:"", note:"", photo:null };
     case "customInspect": return customInspectDefault();
     case "lightInspect": return lightInspectDefault();
@@ -447,8 +474,8 @@ function defaultDataFor(card, tenant) {
 function renderFormBody(card, data, setData, caseData, tenant) {
   switch (card.formKind) {
     case "survey": return e(SurveyForm, { data, setData, caseData });
-    case "meeting": return e(MeetingForm, { data, setData });
     case "design_meeting": return e(DesignMeetingForm, { data, setData });
+    case "site_meeting": return e(SiteMeetingForm, { data, setData });
     case "install": return e(InstallForm, { data, setData });
     case "customInspect": return e(CustomInspectForm, { data, setData });
     case "lightInspect": return e(LightInspectForm, { data, setData });
@@ -469,10 +496,16 @@ function getSummaryRows(card, d) {
       ["施工時間", d.timeStartH ? `${d.timeStartH}:${d.timeStartM || "00"} ～ ${d.timeEndH || "__"}:${d.timeEndM || "00"}` : "—"],
       ["工作摘要", d.summary || "—"], ["記錄組數", `已建立 ${d.items ? d.items.length : 0} 組施工位置與照片`]
     ];
-    case "meeting": return [["會議類型", d.meetingType || "—"], ["會議主題", d.topic || "—"], ["與會人員", d.attendees || "—"], ["決議追蹤", d.resolution || "—"]];
     case "design_meeting": return [
-      ["會議時間", `${d.meetingDate || "—"}${(d.meetingStartH || d.meetingEndH) ? `　${d.meetingStartH || "--"}:${d.meetingStartM || "00"} ～ ${d.meetingEndH || "--"}:${d.meetingEndM || "00"}` : ""}`],
-      ["會議地點", d.location || "—"], ["與會人員", d.attendees || "—"], ["記錄人員", d.recorder || "—"], ["項目名稱", d.projectName || "—"], ["項目進程", d.progress || "—"], ["會議主旨", d.topic || "—"], ["會議內容", d.content || "—"], ["會議後執行內容", d.postActions || "—"]
+      ["會議時間", `${formatDateSlash(d.meetingDate) || "—"}${(d.meetingStartH || d.meetingEndH) ? `　${d.meetingStartH || "--"}:${d.meetingStartM || "00"} ～ ${d.meetingEndH || "--"}:${d.meetingEndM || "00"}` : ""}`],
+      ["會議地點", d.location || "—"], ["與會人員", d.attendees || "—"], ["記錄人員", d.recorder || "—"], ["項目名稱", d.projectName || "—"], ["項目進程", d.progress || "—"], ["會議主旨", d.topic || "—"], ["會議內容", d.content || "—"], ["會議後執行內容", d.postActions || "—"],
+      ["附件", (d.attachments && d.attachments.length) ? `共 ${d.attachments.length} 張` : "—"]
+    ];
+    case "site_meeting": return [
+      ["會議時間", `${formatDateSlash(d.meetingDate) || "—"}${(d.meetingStartH || d.meetingEndH) ? `　${d.meetingStartH || "--"}:${d.meetingStartM || "00"} ～ ${d.meetingEndH || "--"}:${d.meetingEndM || "00"}` : ""}`],
+      ["會議地點", d.location || "—"], ["與會人員", d.attendees || "—"], ["記錄人員", d.recorder || "—"], ["項目名稱", d.projectName || "—"], ["項目進程", d.progress || "—"], ["會議主旨", d.topic || "—"], ["會議內容", d.content || "—"], ["會議後執行內容", d.postActions || "—"],
+      ["相關部門配合事宜", (d.deptCoord || []).filter(g => g.department && g.department !== "無").length ? `共 ${(d.deptCoord || []).filter(g => g.department && g.department !== "無").length} 項` : "—"],
+      ["附件", (d.attachmentGroups && d.attachmentGroups.length) ? `共 ${d.attachmentGroups.length} 組` : "—"]
     ];
     case "install": return [["施工區域", d.zone || "—"], ["材料批號", d.material || "—"], ["檢查人員", d.inspector || "—"], ["檢查結果", d.checkResult || "—"], ["備註", d.note || "—"]];
     case "customInspect": return [
@@ -668,19 +701,11 @@ function buildSimplePDF(card, d, tenant) {
   const tdL  = `style="font-weight:700;background:#F8F9FA;font-size:11px;color:#374151;width:80px;padding:8px 9px;border:1px solid #CBD5E0;vertical-align:middle;white-space:nowrap"`;
   const tdV  = `style="font-size:12px;color:#1F2937;padding:8px 9px;border:1px solid #CBD5E0;vertical-align:middle"`;
   const tdP  = `style="font-size:12px;color:#1F2937;padding:8px 9px;border:1px solid #CBD5E0;vertical-align:middle;white-space:pre-wrap"`;
-  let mainInfoRows = "";
-  if (card.formKind === "meeting") {
-    mainInfoRows = `<tr><td ${tdL}>會議類型</td><td ${tdV} colspan="3">${d.meetingType || "—"}</td></tr>
-      <tr><td ${tdL}>會議主題</td><td ${tdV} colspan="3">${d.topic || "—"}</td></tr>
-      <tr><td ${tdL}>與會人員</td><td ${tdV} colspan="3">${d.attendees || "—"}</td></tr>
-      <tr><td ${tdL}>決議追蹤</td><td ${tdP} colspan="3">${d.resolution || "—"}</td></tr>`;
-  } else {
-    const badge = d.checkResult === "合格" ? `<span style="padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;background:#D1FAE5;color:#065F46">✓ 合格</span>`
-      : d.checkResult === "不合格" ? `<span style="padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;background:#FEE2E2;color:#991B1B">✗ 不合格</span>` : "—";
-    mainInfoRows = `<tr><td ${tdL}>施工區域</td><td ${tdV}>${d.zone || "—"}</td><td ${tdL}>材料批號</td><td ${tdV}>${d.material || "—"}</td></tr>
+  const badge = d.checkResult === "合格" ? `<span style="padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;background:#D1FAE5;color:#065F46">✓ 合格</span>`
+    : d.checkResult === "不合格" ? `<span style="padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;background:#FEE2E2;color:#991B1B">✗ 不合格</span>` : "—";
+  const mainInfoRows = `<tr><td ${tdL}>施工區域</td><td ${tdV}>${d.zone || "—"}</td><td ${tdL}>材料批號</td><td ${tdV}>${d.material || "—"}</td></tr>
       <tr><td ${tdL}>檢查人員</td><td ${tdV}>${d.inspector || "—"}</td><td ${tdL}>檢查結果</td><td ${tdV}>${badge}</td></tr>
       <tr><td ${tdL}>備註說明</td><td ${tdP} colspan="3">${d.note || "—"}</td></tr>`;
-  }
   const pPrint = d.photo ? `<img src="${d.photo}" crossorigin="anonymous" style="max-width:100%;max-height:130px;object-fit:contain;display:inline-block;vertical-align:middle">` : "";
   const photoSection = `${secBar("現場照片記錄")}<table style="width:100%;border-collapse:collapse;margin-bottom:18px"><tbody><tr><td style="border:1px solid #CBD5E0;padding:10px;width:50%;height:155px;vertical-align:middle;text-align:center">${pPrint}</td><td style="border:1px solid #CBD5E0;padding:10px;width:50%;height:155px;text-align:center;vertical-align:middle"></td></tr></tbody></table>`;
   const inner = buildHeaderHTML(card, tenant) + secBar(`${card.label}資訊`) + `<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tbody>${mainInfoRows}</tbody></table>` + photoSection + buildSigHTML() + buildFootHTML();
@@ -772,7 +797,7 @@ function buildDesignMeetingPDF(card, d) {
   const tdV = `style="font-size:12px;color:#1F2937;padding:8px 9px;border:1px solid #CBD5E0;vertical-align:middle"`;
   const boxStyle = "border:1px solid #CBD5E0;padding:10px;min-height:90px;font-size:12px;white-space:pre-wrap;margin-bottom:14px";
   const timeRange = (d.meetingStartH || d.meetingEndH) ? `${d.meetingStartH || "--"}:${d.meetingStartM || "00"} ～ ${d.meetingEndH || "--"}:${d.meetingEndM || "00"}` : "";
-  const dateTimeStr = [d.meetingDate || "—", timeRange].filter(Boolean).join("　");
+  const dateTimeStr = [formatDateSlash(d.meetingDate) || "—", timeRange].filter(Boolean).join("　");
   const infoHTML = `<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tbody>
       <tr><td ${tdL}>會議時間</td><td ${tdV}>${dateTimeStr}</td><td ${tdL}>會議地點</td><td ${tdV}>${d.location || "—"}</td></tr>
       <tr><td ${tdL}>與會人員</td><td ${tdV}>${d.attendees || "—"}</td><td ${tdL}>記錄人員</td><td ${tdV}>${d.recorder || "—"}</td></tr>
@@ -780,9 +805,46 @@ function buildDesignMeetingPDF(card, d) {
       <tr><td ${tdL}>會議主旨</td><td ${tdV} colspan="3">${d.topic || "—"}</td></tr></tbody></table>`;
   const contentHTML = secBar("會議內容") + `<div style="${boxStyle}">${d.content || "—"}</div>`;
   const postActionHTML = secBar("會議後執行內容") + `<div style="${boxStyle}">${d.postActions || "—"}</div>`;
+  const attachHTML = (d.attachments && d.attachments.length)
+    ? secBar("附件") + photoGridHTML(d.attachments.map((p, i) => ({ src: p, label: `附件 ${i + 1}` })))
+    : "";
   const sigLabelHTML = `<div style="font-weight:400;font-size:12px;background:#F3F4F6;padding:7px 10px;border:1px solid #CBD5E0;border-bottom:none;letter-spacing:1px;margin-top:14px">請於此頁簽署並惠于意見回覆，以利後續工作進行，謝謝。</div>`;
-  const sigHTML = sigLabelHTML + `<div style="border:1px solid #CBD5E0;min-height:240px;margin-bottom:14px"></div>`;
-  const inner = buildDesignMeetingHeaderHTML(card) + infoHTML + contentHTML + postActionHTML + sigHTML;
+  const sigHTML = sigLabelHTML + `<div style="border:1px solid #CBD5E0;min-height:200px;margin-bottom:14px"></div>`;
+  const inner = buildDesignMeetingHeaderHTML(card) + infoHTML + contentHTML + postActionHTML + attachHTML + sigHTML + buildFootHTML();
+  return `<div>` + pdfPageShell(inner, true, true) + `</div>`;
+}
+
+/* ── 工程部工地會議 PDF（沿用設計部會議記錄版面，附件改為「說明＋照片」分組，並列出相關部門配合事宜） ── */
+function buildSiteMeetingPDF(card, d) {
+  const tdL = `style="font-weight:700;background:#F8F9FA;font-size:11px;color:#374151;width:90px;padding:8px 9px;border:1px solid #CBD5E0;vertical-align:middle;white-space:nowrap"`;
+  const tdV = `style="font-size:12px;color:#1F2937;padding:8px 9px;border:1px solid #CBD5E0;vertical-align:middle"`;
+  const boxStyle = "border:1px solid #CBD5E0;padding:10px;min-height:90px;font-size:12px;white-space:pre-wrap;margin-bottom:14px";
+  const timeRange = (d.meetingStartH || d.meetingEndH) ? `${d.meetingStartH || "--"}:${d.meetingStartM || "00"} ～ ${d.meetingEndH || "--"}:${d.meetingEndM || "00"}` : "";
+  const dateTimeStr = [formatDateSlash(d.meetingDate) || "—", timeRange].filter(Boolean).join("　");
+  const infoHTML = `<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tbody>
+      <tr><td ${tdL}>會議時間</td><td ${tdV}>${dateTimeStr}</td><td ${tdL}>會議地點</td><td ${tdV}>${d.location || "—"}</td></tr>
+      <tr><td ${tdL}>與會人員</td><td ${tdV}>${d.attendees || "—"}</td><td ${tdL}>記錄人員</td><td ${tdV}>${d.recorder || "—"}</td></tr>
+      <tr><td ${tdL}>項目名稱</td><td ${tdV}>${d.projectName || "—"}</td><td ${tdL}>項目進程</td><td ${tdV}>${d.progress || "—"}</td></tr>
+      <tr><td ${tdL}>會議主旨</td><td ${tdV} colspan="3">${d.topic || "—"}</td></tr></tbody></table>`;
+  const contentHTML = secBar("會議內容") + `<div style="${boxStyle}">${d.content || "—"}</div>`;
+  const postActionHTML = secBar("會議後執行內容") + `<div style="${boxStyle}">${d.postActions || "—"}</div>`;
+  const deptList = (d.deptCoord || []).filter(g => g && g.department && g.department !== "無");
+  const deptCoordHTML = deptList.length
+    ? secBar("相關部門配合事宜") + `<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tbody>${
+        deptList.map(g => `<tr><td ${tdL}>${g.department}</td><td ${tdV}>${g.content || "—"}</td></tr>`).join("")
+      }</tbody></table>`
+    : "";
+  const groups = (d.attachmentGroups || []).filter(g => g && (g.desc || g.photo));
+  const attachHTML = groups.length
+    ? secBar("附件") + groups.map((g, i) => `
+      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;table-layout:fixed"><tbody>
+        <tr><td style="width:70px;background:#F8F9FA;font-size:11px;font-weight:700;color:#374151;padding:6px 9px;border:1px solid #CBD5E0">附件${i + 1}</td><td style="font-size:11px;color:#374151;padding:6px 9px;border:1px solid #CBD5E0;white-space:pre-wrap">${g.desc || "—"}</td></tr>
+        <tr><td colspan="2" style="border:1px solid #CBD5E0;padding:8px;height:150px;text-align:center;vertical-align:middle">${g.photo ? `<img src="${g.photo}" crossorigin="anonymous" style="max-width:100%;max-height:130px;object-fit:contain">` : ""}</td></tr>
+      </tbody></table>`).join("")
+    : "";
+  const sigLabelHTML = `<div style="font-weight:400;font-size:12px;background:#F3F4F6;padding:7px 10px;border:1px solid #CBD5E0;border-bottom:none;letter-spacing:1px;margin-top:14px">請於此頁簽署並惠于意見回覆，以利後續工作進行，謝謝。</div>`;
+  const sigHTML = sigLabelHTML + `<div style="border:1px solid #CBD5E0;min-height:200px;margin-bottom:14px"></div>`;
+  const inner = buildDesignMeetingHeaderHTML(card) + infoHTML + contentHTML + postActionHTML + deptCoordHTML + attachHTML + sigHTML + buildFootHTML();
   return `<div>` + pdfPageShell(inner, true, true) + `</div>`;
 }
 
@@ -822,8 +884,9 @@ function buildPressureTestPDF(card, d, tenant) {
 
 function buildPDFHTML(card, d, tenant) {
   if (card.formKind === "survey") return buildSurveyPDF(card, d, tenant);
-  if (card.formKind === "meeting" || card.formKind === "install") return buildSimplePDF(card, d, tenant);
+  if (card.formKind === "install") return buildSimplePDF(card, d, tenant);
   if (card.formKind === "design_meeting") return buildDesignMeetingPDF(card, d);
+  if (card.formKind === "site_meeting") return buildSiteMeetingPDF(card, d);
   if (card.formKind === "customInspect") return buildCustomInspectPDF(card, d, tenant);
   if (card.formKind === "lightInspect") return buildLightInspectPDF(card, d, tenant);
   if (card.formKind === "generic") return buildGenericPDF(card, d, tenant);

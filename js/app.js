@@ -6,7 +6,7 @@
 const DATE_STR = new Date().toLocaleDateString("zh-TW", { year:"numeric", month:"2-digit", day:"2-digit" });
 const DATE_FILE = (() => { const t = new Date(); return `${t.getFullYear()}${String(t.getMonth()+1).padStart(2,"0")}${String(t.getDate()).padStart(2,"0")}`; })();
 
-const ROLE_LABEL = { admin:"系統管理者", office:"辦公室主管", field:"現場人員" };
+const ROLE_LABEL = { admin:"系統管理者", office:"辦公室人員", field:"現場人員" };
 
 /* ═══════════════════ AI 判讀（通用版，適用任何 formKind） ═══════════════════ */
 async function analyzeRecord(card, data) {
@@ -130,15 +130,16 @@ function DispatchCalendar({ tenant, jobs, onAdd }) {
   const sites = tenant.sites || [];
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const canAdd = f.staff && f.site && f.date;
+  const ctrlStyle = { ...S.input, padding:"7px 9px", fontSize:13, height:35, lineHeight:"19px", boxSizing:"border-box" };
   return e("div", null,
     e("div", { style: { display:"flex", gap:8, flexWrap:"wrap", alignItems:"flex-end", background:"#1F2937", border:"1px solid #374151", borderRadius:10, padding:14, marginBottom:16 } },
-      e("div", { style: { minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "日期"), e("input", { type:"date", value:f.date, onChange:ev=>set("date", ev.target.value), style: { ...S.input, padding:"7px 9px", fontSize:13 } })),
-      e("div", { style: { minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "派工人員"), e("select", { value:f.staff, onChange:ev=>set("staff", ev.target.value), style: { ...S.input, padding:"7px 9px", fontSize:13 } }, tenant.staff.map(s=>e("option",{key:s},s)))),
+      e("div", { style: { minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "日期"), e("input", { type:"date", value:f.date, onChange:ev=>set("date", ev.target.value), style: ctrlStyle })),
+      e("div", { style: { minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "派工人員"), e("select", { value:f.staff, onChange:ev=>set("staff", ev.target.value), style: ctrlStyle }, tenant.staff.map(s=>e("option",{key:s},s)))),
       e("div", { style: { flex:"1.6 1 160px", minWidth:160 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "案場／據點"),
         sites.length
-          ? e("select", { value:f.site, onChange:ev=>set("site", ev.target.value), style: { ...S.input, padding:"7px 9px", fontSize:13 } }, e("option",{value:""},"請選擇…"), sites.map(s=>e("option",{key:s},s)))
-          : e("input", { value:f.site, onChange:ev=>set("site", ev.target.value), placeholder:"輸入案場名稱", style: { ...S.input, padding:"7px 9px", fontSize:13 } })),
-      e("div", { style: { flex:"1.6 1 160px", minWidth:160 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "備註（選填）"), e("input", { value:f.note, onChange:ev=>set("note", ev.target.value), placeholder:"如：帶捲尺與樣品", style: { ...S.input, padding:"7px 9px", fontSize:13 } })),
+          ? e("select", { value:f.site, onChange:ev=>set("site", ev.target.value), style: ctrlStyle }, e("option",{value:""},"請選擇…"), sites.map(s=>e("option",{key:s},s)))
+          : e("input", { value:f.site, onChange:ev=>set("site", ev.target.value), placeholder:"輸入案場名稱", style: ctrlStyle })),
+      e("div", { style: { flex:"1.6 1 160px", minWidth:160 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "備註（選填）"), e("input", { value:f.note, onChange:ev=>set("note", ev.target.value), placeholder:"如：帶捲尺與樣品", style: ctrlStyle })),
       e("button", { disabled: !canAdd, onClick: () => { onAdd({ ...f }); setF(p => ({ ...p, site:"", note:"" })); },
         style: { padding:"10px 18px", fontSize:12.5, fontWeight:800, borderRadius:8, border:"none", background: canAdd ? "#F97316" : "#6B7280", color:"#1A0E06", cursor: canAdd ? "pointer" : "not-allowed", whiteSpace:"nowrap" } }, "＋ 指派")
     ),
@@ -164,11 +165,28 @@ function DispatchCalendar({ tenant, jobs, onAdd }) {
 }
 
 /* ═══════════════════ Admin：部門與表單管理 ═══════════════════ */
+function AdminSectionTitle({ children }) {
+  return e("div", { style: { fontWeight:800, fontSize:13, color:"#F97316", background:"#1F2937", border:"1px solid #374151", borderLeft:"3px solid #F97316", padding:"9px 12px", borderRadius:8, margin:"20px 0 12px", letterSpacing:0.5 } }, children);
+}
+
 function Admin({ tenant, onUpdateTenant }) {
   const [newDeptLabel, setNewDeptLabel] = useState("");
   const [addCardDept, setAddCardDept] = useState("");
   const [newCardLabel, setNewCardLabel] = useState("");
+  const [newStaffName, setNewStaffName] = useState("");
 
+  const addStaff = () => {
+    const name = newStaffName.trim();
+    if (!name) return;
+    if (tenant.staff.includes(name)) { alert("此人員已存在於名單中。"); return; }
+    onUpdateTenant(t => ({ ...t, staff: [...t.staff, name] }));
+    setNewStaffName("");
+  };
+  const removeStaff = (name) => {
+    if (tenant.staff.length <= 1) { alert("至少需保留一名人員，無法刪除。"); return; }
+    if (!confirm(`確定要移除人員「${name}」嗎？`)) return;
+    onUpdateTenant(t => ({ ...t, staff: t.staff.filter(s => s !== name) }));
+  };
   const addDept = () => {
     if (!newDeptLabel.trim()) return;
     const id = "dept_" + uid("");
@@ -193,7 +211,16 @@ function Admin({ tenant, onUpdateTenant }) {
       "這是「", tenant.name, "」的部門與表單設定。新增/刪除部門、或在部門下新增「通用表單」卡片——不需要寫程式。",
       e("br"), "進階表單類型（如 TBM 簽到、品管壓測、工程回報等）需要工程師建置，這裡只能新增通用表單並編輯基本欄位。"
     ),
-    e(SectionTitle, null, "部門清單"),
+    e(AdminSectionTitle, null, "現場人員清單"),
+    tenant.staff.map(s => e("div", { key:s, style: { display:"flex", alignItems:"center", gap:10, background:"#1F2937", border:"1px solid #374151", borderRadius:8, padding:"9px 12px", marginBottom:7 } },
+      e("span", { style: { fontSize:18 } }, "👤"), e("span", { style: { flex:1, color:"#F3F4F6", fontSize:13, fontWeight:700 } }, s),
+      e("button", { onClick:()=>removeStaff(s), style: { color:"#EF4444", background:"none", border:"none", fontSize:12, cursor:"pointer" } }, "刪除")
+    )),
+    e("div", { style: { display:"flex", gap:8, marginTop:8, marginBottom:20 } },
+      e("input", { value:newStaffName, onChange:ev=>setNewStaffName(ev.target.value), placeholder:"新人員姓名", style: { ...S.input, padding:"8px 10px", fontSize:13, flex:1 } }),
+      e("button", { onClick:addStaff, style: { padding:"8px 16px", fontSize:12.5, fontWeight:700, borderRadius:7, border:"1.5px dashed #F97316", background:"#3A2A18", color:"#F97316", cursor:"pointer", whiteSpace:"nowrap" } }, "＋ 新增人員")
+    ),
+    e(AdminSectionTitle, null, "部門清單"),
     tenant.departments.map(d => e("div", { key:d.id, style: { display:"flex", alignItems:"center", gap:10, background:"#1F2937", border:"1px solid #374151", borderRadius:8, padding:"9px 12px", marginBottom:7 } },
       e("span", { style: { fontSize:18 } }, d.icon), e("span", { style: { flex:1, color:"#F3F4F6", fontSize:13, fontWeight:700 } }, d.label),
       e("span", { style: { color:"#6B7280", fontSize:11 } }, `${tenant.cards.filter(c=>c.dept===d.id).length} 項表單`),
@@ -203,13 +230,13 @@ function Admin({ tenant, onUpdateTenant }) {
       e("input", { value:newDeptLabel, onChange:ev=>setNewDeptLabel(ev.target.value), placeholder:"新部門名稱", style: { ...S.input, padding:"8px 10px", fontSize:13, flex:1 } }),
       e("button", { onClick:addDept, style: { padding:"8px 16px", fontSize:12.5, fontWeight:700, borderRadius:7, border:"1.5px dashed #F97316", background:"#3A2A18", color:"#F97316", cursor:"pointer", whiteSpace:"nowrap" } }, "＋ 新增部門")
     ),
-    e(SectionTitle, null, "新增通用表單卡片"),
+    e(AdminSectionTitle, null, "新增通用表單卡片"),
     e("div", { style: { display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" } },
       e("select", { value:addCardDept, onChange:ev=>setAddCardDept(ev.target.value), style: { ...S.input, padding:"8px 10px", fontSize:13, flex:"1 1 140px" } }, e("option",{value:""},"選擇部門…"), tenant.departments.map(d=>e("option",{key:d.id,value:d.id},d.label))),
       e("input", { value:newCardLabel, onChange:ev=>setNewCardLabel(ev.target.value), placeholder:"表單名稱", style: { ...S.input, padding:"8px 10px", fontSize:13, flex:"1 1 160px" } }),
       e("button", { onClick:addCard, disabled: !addCardDept || !newCardLabel.trim(), style: { padding:"8px 16px", fontSize:12.5, fontWeight:700, borderRadius:7, border:"1.5px dashed #F97316", background:"#3A2A18", color:"#F97316", cursor:"pointer", whiteSpace:"nowrap" } }, "＋ 新增表單卡片")
     ),
-    e(SectionTitle, null, "所有表單卡片"),
+    e(AdminSectionTitle, null, "所有表單卡片"),
     tenant.cards.map(c => e("div", { key:c.id, style: { display:"flex", alignItems:"center", gap:10, background:"#1F2937", border:"1px solid #374151", borderRadius:8, padding:"9px 12px", marginBottom:7 } },
       e("span", { style: { fontSize:16 } }, c.icon), e("span", { style: { flex:1, color:"#F3F4F6", fontSize:13 } }, `${c.label}　`, e("span",{style:{color:"#6B7280",fontSize:11}}, `(${(tenant.departments.find(d=>d.id===c.dept)||{}).label || "?"} · ${c.formKind})`)),
       c.formKind === "generic" && e("button", { onClick:()=>removeCard(c.id), style: { color:"#EF4444", background:"none", border:"none", fontSize:12, cursor:"pointer" } }, "刪除")
@@ -329,7 +356,7 @@ function FieldRoleView({ tenant, records, dispatches, notes, onSubmitRecord, onC
     tab === "form" && body,
     tab === "jobs" && e("div", { style: { padding:"16px 14px" } },
       myDispatches.length === 0
-        ? e("div", { style: { border:"1px dashed #374151", borderRadius:10, padding:"44px 20px", textAlign:"center", color:"#6B7280", fontSize:13, lineHeight:2 } }, e("div", null, "目前沒有指派"), e("div", { style: { fontSize:12 } }, "辦公室主管在「派工行事曆」指派工作後，會出現在這裡"))
+        ? e("div", { style: { border:"1px dashed #374151", borderRadius:10, padding:"44px 20px", textAlign:"center", color:"#6B7280", fontSize:13, lineHeight:2 } }, e("div", null, "目前沒有指派"), e("div", { style: { fontSize:12 } }, "辦公室人員在「派工行事曆」指派工作後，會出現在這裡"))
         : [...myDispatches].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).map(d => e("div", { key:d.id, style: { display:"flex", alignItems:"center", gap:10, background:"#1F2937", border:"1px solid #374151", borderRadius:8, padding:"10px 13px", marginBottom:8, opacity: d.status==="done"?.55:1 } },
           e("span", { style: { fontSize:11, color:"#6B7280", fontFamily:"monospace", minWidth:74 } }, d.date),
           e("div", { style: { flex:1 } }, e("div", { style: { color:"#F3F4F6", fontSize:13 } }, d.site), d.note && e("div", { style: { color:"#9CA3AF", fontSize:11.5, marginTop:2 } }, d.note)),
@@ -476,7 +503,7 @@ function App() {
       const [session, schemas, recs, disps] = await Promise.all([
         DB.get("session", "current"), DB.getAll("schemas"), DB.getAll("records"), DB.getAll("dispatches")
       ]);
-      const ov = {}; schemas.forEach(s => { ov[s.id] = { departments: s.departments, cards: s.cards }; });
+      const ov = {}; schemas.forEach(s => { ov[s.id] = { departments: s.departments, cards: s.cards, staff: s.staff }; });
       setOverrides(ov);
       setRecords(recs.sort((a, b) => b.ts - a.ts));
       setDispatches(disps);
@@ -490,7 +517,7 @@ function App() {
   const getTenant = (tenantId) => {
     const base = TENANTS.find(t => t.id === tenantId);
     const ov = overrides[tenantId];
-    return ov ? { ...base, departments: ov.departments, cards: ov.cards } : base;
+    return ov ? { ...base, departments: ov.departments, cards: ov.cards, staff: ov.staff || base.staff } : base;
   };
 
   const login = (tenantId, role) => {
@@ -502,8 +529,8 @@ function App() {
   const onUpdateTenant = (tenantId, updater) => {
     const cur = getTenant(tenantId);
     const next = updater(cur);
-    const rec = { id: tenantId, departments: next.departments, cards: next.cards };
-    setOverrides(o => ({ ...o, [tenantId]: { departments: rec.departments, cards: rec.cards } }));
+    const rec = { id: tenantId, departments: next.departments, cards: next.cards, staff: next.staff };
+    setOverrides(o => ({ ...o, [tenantId]: { departments: rec.departments, cards: rec.cards, staff: rec.staff } }));
     DB.put("schemas", rec);
   };
 

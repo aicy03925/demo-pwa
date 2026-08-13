@@ -40,6 +40,77 @@ function Txt({ label, value, onChange, placeholder, multi }) {
   );
 }
 
+/* 多張附件照片（設計部會議記錄「附件」使用） */
+function MultiPhoto({ label, photos, onChange }) {
+  const fileInputRef = useRef(null);
+  const list = photos || [];
+  const addPhotos = (ev) => {
+    const files = Array.from(ev.target.files || []);
+    if (!files.length) return;
+    Promise.all(files.map(file => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    }))).then(results => onChange([...list, ...results]));
+    ev.target.value = "";
+  };
+  const removeAt = (idx) => onChange(list.filter((_, i) => i !== idx));
+  return e("div", { style: { marginBottom: 15 } },
+    e("label", { style: S.label }, label),
+    e("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 } },
+      list.map((src, idx) => e("div", { key: idx, style: { position: "relative", width: 90, height: 90, borderRadius: 8, overflow: "hidden", border: "2px solid #6EE7B7" } },
+        e("img", { src, style: { width: "100%", height: "100%", objectFit: "cover", display: "block" } }),
+        e("button", { type: "button", onClick: ev => { ev.preventDefault(); removeAt(idx); }, style: { position: "absolute", top: 2, right: 2, background: "rgba(239,68,68,0.85)", border: "none", borderRadius: "50%", width: 18, height: 18, color: "#fff", fontSize: 9, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } }, "✕")
+      )),
+      e("input", { type: "file", accept: "image/*", multiple: true, ref: fileInputRef, onChange: addPhotos, style: { display: "none" } }),
+      e("button", { type: "button", onClick: () => fileInputRef.current.click(), style: { width: 90, height: 90, border: "1.5px dashed #CBD5E0", borderRadius: 8, background: "#F9FAFB", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer" } },
+        e("span", { style: { fontSize: 20 } }, "📷"),
+        e("span", { style: { fontSize: 10, fontWeight: 600, color: "#9CA3AF" } }, "新增")
+      )
+    )
+  );
+}
+
+/* 「說明＋照片」為一組、可重複新增的附件元件（工地會議「附件」使用） */
+function AttachmentGroups({ label, groups, onChange }) {
+  const list = groups || [];
+  const addGroup = () => onChange([...list, { desc: "", photo: null }]);
+  const removeGroup = (idx) => onChange(list.filter((_, i) => i !== idx));
+  const updateGroup = (idx, patch) => { const next = [...list]; next[idx] = { ...next[idx], ...patch }; onChange(next); };
+  return e("div", { style: { marginBottom: 16 } },
+    e("div", { style: { ...S.label, marginBottom: 8 } }, label),
+    list.map((g, idx) => e("div", { key: idx, style: { background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: 12, marginBottom: 10 } },
+      e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
+        e("span", { style: { fontSize: 12, fontWeight: 700, color: "#6B7280" } }, `附件 #${idx + 1}`),
+        e("button", { type: "button", onClick: () => removeGroup(idx), style: { background: "none", border: "none", color: "#EF4444", fontSize: 11, fontWeight: 600, cursor: "pointer" } }, "🛑 刪除")
+      ),
+      e("textarea", { value: g.desc || "", onChange: ev => updateGroup(idx, { desc: ev.target.value }), placeholder: "說明...", rows: 2, style: { ...S.input, resize: "vertical", minHeight: 40, fontSize: 13, marginBottom: 8 } }),
+      e(Photo, { label: "照片", photo: g.photo, onCapture: v => updateGroup(idx, { photo: v }) })
+    )),
+    e("button", { type: "button", onClick: addGroup, style: { width: "100%", padding: "9px", fontSize: 13, fontWeight: 700, borderRadius: 8, border: "1.5px dashed #9CA3AF", background: "#F9FAFB", color: "#6B7280", cursor: "pointer" } }, "＋ 新增一組附件（說明＋照片）")
+  );
+}
+
+/* 「配合部門＋配合事項」為一組、可重複新增（工地會議「相關部門配合事宜」使用） */
+function DeptCoordGroups({ label, groups, onChange }) {
+  const list = groups || [];
+  const addGroup = () => onChange([...list, { department: "", content: "" }]);
+  const removeGroup = (idx) => onChange(list.filter((_, i) => i !== idx));
+  const updateGroup = (idx, patch) => { const next = [...list]; next[idx] = { ...next[idx], ...patch }; onChange(next); };
+  return e("div", { style: { marginBottom: 16 } },
+    e("div", { style: { ...S.label, marginBottom: 8 } }, label),
+    list.map((g, idx) => e("div", { key: idx, style: { background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: 12, marginBottom: 10 } },
+      e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
+        e("span", { style: { fontSize: 12, fontWeight: 700, color: "#6B7280" } }, `配合事項 #${idx + 1}`),
+        e("button", { type: "button", onClick: () => removeGroup(idx), style: { background: "none", border: "none", color: "#EF4444", fontSize: 11, fontWeight: 600, cursor: "pointer" } }, "🛑 刪除")
+      ),
+      e(Sel, { label: "配合部門", value: g.department || "", onChange: v => updateGroup(idx, { department: v }), options: ["設計部","工程部","行政部","無"] }),
+      e("textarea", { value: g.content || "", onChange: ev => updateGroup(idx, { content: ev.target.value }), placeholder: "配合事項內容...", rows: 2, style: { ...S.input, resize: "vertical", minHeight: 40, fontSize: 13 } })
+    )),
+    e("button", { type: "button", onClick: addGroup, style: { width: "100%", padding: "9px", fontSize: 13, fontWeight: 700, borderRadius: 8, border: "1.5px dashed #9CA3AF", background: "#F9FAFB", color: "#6B7280", cursor: "pointer" } }, "＋ 新增一項配合事宜")
+  );
+}
+
 function SectionTitle({ children }) {
   return e("div", { style: { fontWeight:800, fontSize:13, color:"#374151", background:"#F3F4F6", padding:"9px 12px", borderRadius:8, margin:"20px 0 12px", letterSpacing:0.5 } }, children);
 }

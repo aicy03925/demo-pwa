@@ -4,11 +4,11 @@
    彼此獨立，不寫死在共用常數裡，方便日後增減產業別。
    ════════════════════════════════════════════════════════════ */
 
-/* ─── 京城建設 / 光宇燈具 沿用的「動態欄位 schema」表單資料
+/* ─── 巴洛克建設 / 光宇燈具 沿用的「動態欄位 schema」表單資料
        （原 prototype-v1-rev2_2.html 的 INIT_SCHEMAS，行為不變） ─── */
 const T01_SCHEMA = {
   title: "工地巡檢紀錄",
-  sites: ["京城-衛武營", "京城-龍中134", "京城-青海370"],
+  sites: ["巴洛克-衛武營", "巴洛克-龍中134", "巴洛克-青海370"],
   aiRule: "你是營建現場品管助理。請依照片判斷：燈具安裝位置是否對齊、型號外觀是否與標示相符、施工工法是否有明顯瑕疵。",
   fields: [
     { id: "site", type: "select", label: "案場", required: true, from: "sites" },
@@ -101,8 +101,8 @@ const T03_CASE_DATA = {
 
 const CUSTOM_TRIGGER_PROJECTS = [
   "聯上-五福", "聯上-左西", "聯上-明仁", "聯上-停35", "聯上-博孝", "聯上-橋北",
-  "慶旺-新旺", "三地平實23", "元帥府", "京城-衛武營", "京城-龍中134", "京城-龍中191",
-  "京城-青海370", "清景麟-平實22", "華友聯-援中", "華友聯-果貿三", "華友聯-大山486",
+  "慶旺-新旺", "三地平實23", "元帥府", "巴洛克-衛武營", "巴洛克-龍中134", "巴洛克-龍中191",
+  "巴洛克-青海370", "清景麟-平實22", "華友聯-援中", "華友聯-果貿三", "華友聯-大山486",
   "鈦宇-仁春", "福裕-武東案", "都市-澄德65"
 ];
 
@@ -111,7 +111,7 @@ const T03_SITES = [...T03_CASE_DATA.案件列表.map(c => c.案件名稱), ...CU
 /* 表單卡片清單（原 index.html 的 CARDS，formKind 意義不變） */
 const T03_CARDS = [
   { id:"survey",  dept:"engineering", label:"工程回報", icon:"🔧", color:"#F97316", bg:"#FFF7ED", desc:"施工拍照、施工進度紀錄", formKind:"survey" },
-  { id:"meeting", dept:"engineering", label:"工地會議", icon:"👥", color:"#2563EB", bg:"#EFF6FF", desc:"會議紀錄、決議追蹤、出席人員記錄", formKind:"meeting" },
+  { id:"meeting", dept:"engineering", label:"工地會議", icon:"👥", color:"#2563EB", bg:"#EFF6FF", desc:"會議紀錄、決議追蹤、出席人員記錄", formKind:"site_meeting" },
   { id:"install", dept:"engineering", label:"現場會勘", icon:"🔍", color:"#059669", bg:"#ECFDF5", desc:"工地進度回報、自主檢查、問題與風險預測", formKind:"install" },
 
   { id:"design_quote", dept:"design", label:"設計費報價表", icon:"🧾", color:"#8B5CF6", bg:"#F5F3FF", desc:"設計費用項目、金額試算與報價", formKind:"generic",
@@ -248,7 +248,7 @@ const T03_CARDS = [
   });
 })();
 
-/* ─── T04 瓦斯拉管施工公司（新增，示範產業） ─── */
+/* ─── T04 天然氣管路規劃公司（新增，示範產業） ─── */
 const T04_DEPARTMENTS = [
   { id:"construction", label:"工務部", icon:"🛠️", color:"#F97316", bg:"#FFF7ED" },
   { id:"admin",         label:"行政部", icon:"📁", color:"#0EA5E9", bg:"#F0F9FF" },
@@ -331,7 +331,7 @@ const T04_SITES = ["中山幹管新設", "文心路瓦斯延管", "五權新村�
 /* ─── 租戶主表 ─── */
 const TENANTS = [
   {
-    id:"T01", name:"京城建設", industry:"建商／不動產開發",
+    id:"T01", name:"巴洛克建設", industry:"建商／不動產開發",
     accounts:[
       { code:"T01-A", password:"demo1234", role:"admin" },
       { code:"T01-O", password:"demo1234", role:"office" },
@@ -370,7 +370,7 @@ const TENANTS = [
     sites: T03_SITES,
   },
   {
-    id:"T04", name:"瓦斯拉管施工公司", industry:"天然氣管線工程",
+    id:"T04", name:"天然氣管路規劃公司", industry:"天然氣管線工程",
     accounts:[
       { code:"T04-A", password:"demo1234", role:"admin" },
       { code:"T04-O", password:"demo1234", role:"office" },
