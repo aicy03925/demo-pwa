@@ -133,8 +133,8 @@ function DispatchCalendar({ tenant, jobs, onAdd }) {
   const ctrlStyle = { ...S.input, padding:"7px 9px", fontSize:13, height:35, lineHeight:"19px", boxSizing:"border-box" };
   return e("div", null,
     e("div", { style: { display:"flex", gap:8, flexWrap:"wrap", alignItems:"flex-end", background:"#1F2937", border:"1px solid #374151", borderRadius:10, padding:14, marginBottom:16 } },
-      e("div", { style: { minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "日期"), e("input", { type:"date", value:f.date, onChange:ev=>set("date", ev.target.value), style: ctrlStyle })),
-      e("div", { style: { minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "派工人員"), e("select", { value:f.staff, onChange:ev=>set("staff", ev.target.value), style: ctrlStyle }, tenant.staff.map(s=>e("option",{key:s},s)))),
+      e("div", { style: { flex:"1 1 150px", minWidth:150, maxWidth:200 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "日期"), e("input", { type:"date", value:f.date, onChange:ev=>set("date", ev.target.value), style: { ...ctrlStyle, height:"auto", minHeight:35, maxWidth:"100%", WebkitAppearance:"none", appearance:"none" } })),
+      e("div", { style: { flex:"1 1 130px", minWidth:130 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "派工人員"), e("select", { value:f.staff, onChange:ev=>set("staff", ev.target.value), style: ctrlStyle }, tenant.staff.map(s=>e("option",{key:s},s)))),
       e("div", { style: { flex:"1.6 1 160px", minWidth:160 } }, e("label", { style: { ...S.label, color:"#9CA3AF" } }, "案場／據點"),
         sites.length
           ? e("select", { value:f.site, onChange:ev=>set("site", ev.target.value), style: ctrlStyle }, e("option",{value:""},"請選擇…"), sites.map(s=>e("option",{key:s},s)))
