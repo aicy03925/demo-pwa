@@ -5,6 +5,7 @@
 
 const DATE_STR = new Date().toLocaleDateString("zh-TW", { year:"numeric", month:"2-digit", day:"2-digit" });
 const DATE_FILE = (() => { const t = new Date(); return `${t.getFullYear()}${String(t.getMonth()+1).padStart(2,"0")}${String(t.getDate()).padStart(2,"0")}`; })();
+const sanitizeFileSegment = s => String(s || "").trim().replace(/[\\/:*?"<>|]/g, "");
 
 const ROLE_LABEL = { admin:"系統管理者", office:"辦公室人員", field:"現場人員" };
 
@@ -52,7 +53,12 @@ async function analyzeRecord(card, data) {
 function PDFPage({ card, data, tenant, onBack }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-  const fileName = `${card.label}_${DATE_FILE}.pdf`;
+  const fileName = card.formKind === "survey"
+    ? (() => {
+        const projectName = data.project === "自行填入(手動輸入)" ? data.customProject : data.project;
+        return `${DATE_FILE}-${sanitizeFileSegment(projectName) || "未命名案場"}-${sanitizeFileSegment(data.staff) || "未指定人員"}.pdf`;
+      })()
+    : `${card.label}_${DATE_FILE}.pdf`;
   const summaryRows = getSummaryRows(card, data);
 
   const handleDownload = async () => {
